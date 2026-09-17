@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:18
+    secrets:
+      - db_user
+      - db_password
+    container_name: fast_api_task_manager
+    environment:
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: db_password
+      POSTGRES_DB: task_manager
+    ports:
+    - "5432:5432"
+    volumes:
+    - data_sql:/var/lib/postgresql
+
+volumes:
+  data_sql:
+
+secrets:
+  db_user:
+    environment: DATABASE_USER
+  db_password:
+    environment: DATABASE_PASS
