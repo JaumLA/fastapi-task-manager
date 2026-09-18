@@ -1,8 +1,11 @@
-from fastapi import APIRouter
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from sqlalchemy import Engine
 from sqlmodel import Session, select
 
-from src.taskmanagementapi.db import engine, User
+from ...taskmanagementapi.db import get_engine, User
 
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
@@ -15,24 +18,27 @@ router = APIRouter(
 )
 
 @router.post("/")
-async def login(user: User):
+async def login(user: User, engine: Annotated[Engine, Depends(get_engine)]):
   error_message = {"message": "Wrong credentials."}
   with Session(engine) as session:
 
     if not user.password or not user.email:
-      return {"message": "Missing password or email."}
+      raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing information")
     
     User.model_validate(user)
 
+    # Verifica se existe email
     statement = select(User).where(User.email == user.email)
     db_user = session.exec(statement).first()
     if not db_user:
       return error_message
-    
+
+    # Valida hash da senha no banco
     validation, updated_hash_pswd =  pswd_hasher.verify_and_update(password=user.password, hash=db_user.password)
     if not validation:
       return error_message
 
+    # Se precisar atualiza o hash da senha
     db_user.password = updated_hash_pswd if updated_hash_pswd else db_user.password
     session.add(db_user)
     session.commit()
@@ -40,7 +46,7 @@ async def login(user: User):
     return db_user
 
 @router.post("/register")
-async def register_user(user: User):
+async def register_user(user: User, engine: Annotated[Engine, Depends(get_engine)]):
   with Session(engine) as session:
     User.model_validate(user)
     pswd_hashed = pswd_hasher.hash(user.password)

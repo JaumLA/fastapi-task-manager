@@ -1,10 +1,8 @@
-import os
-from dotenv import load_dotenv
-
 from datetime import time
 
 from sqlmodel import Field, SQLModel, create_engine
 
+from ..config import DATABASE_URL
 
 # Criação das tabelas e models do banco
 
@@ -35,20 +33,16 @@ class Task(SQLModel, table=True):
   end_time: time | None
   user_id: int = Field(foreign_key="user.id", ondelete="CASCADE")
 
-load_dotenv()
-
-# Exemplo: postgresql://[username]:[password]@[host]:[port]/[database_name]
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 if not DATABASE_URL:
-   exit(1)
+  exit(1)
 engine = create_engine(DATABASE_URL, echo=True)
+
+def get_engine():
+  yield engine
 
 def create_db_and_tables():
   SQLModel.metadata.create_all(engine)
 
 # Se executado direto, esse script cria as tabelas no banco conectado
-
 if __name__ == "__main__":
     create_db_and_tables()

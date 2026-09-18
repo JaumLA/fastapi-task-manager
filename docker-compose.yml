@@ -6,14 +6,28 @@ services:
       - db_password
     container_name: fast_api_task_manager
     environment:
-      POSTGRES_USER: db_user
-      POSTGRES_PASSWORD: db_password
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_DB: task_manager
     ports:
     - "5432:5432"
     volumes:
     - data_sql:/var/lib/postgresql
 
+  db_test:
+    image: postgres:18
+    secrets:
+      - test_db_user
+      - test_db_password
+    container_name: test_database_task_manager
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/test_db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/test_db_password
+      POSTGRES_DB: task_manager
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/test_postgresql:uid=999,gid=999
 volumes:
   data_sql:
 
@@ -22,3 +36,7 @@ secrets:
     environment: DATABASE_USER
   db_password:
     environment: DATABASE_PASS
+  test_db_user:
+    environment: TEST_DATABASE_USER
+  test_db_password:
+    environment: TEST_DATABASE_PASS
