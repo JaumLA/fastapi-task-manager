@@ -1,8 +1,8 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from pydantic import ValidationError
+from pydantic import BaseModel, EmailStr, Field, ValidationError
 
 from sqlalchemy import Engine
 from sqlmodel import Session, select
@@ -19,15 +19,19 @@ router = APIRouter(
   prefix="/login"
 )
 
+class UserRequest(BaseModel):
+  email: EmailStr
+  password: str = Field(min_length=8, max_length=32)
+
 @router.post("/")
-async def login(user: User, engine: Annotated[Engine, Depends(get_engine)]):
+async def login(user: UserRequest, engine: Annotated[Engine, Depends(get_engine)]):
   error_message = {"message": "Wrong credentials."}
   with Session(engine) as session:
 
     if not user.password or not user.email:
       raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing information")
 
-    User.model_validate(user)
+    UserRequest.model_validate(user)
 
     # Verifica se existe email
     statement = select(User).where(User.email == user.email)
@@ -48,13 +52,13 @@ async def login(user: User, engine: Annotated[Engine, Depends(get_engine)]):
     return db_user
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register_user(user: User, engine: Annotated[Engine, Depends(get_engine)]):
+async def register_user(user: UserRequest, engine: Annotated[Engine, Depends(get_engine)]):
   with Session(engine) as session:
 
     try:
-      User.model_validate(user)
-    except ValidationError:
-      raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Wrong parameter type")
+      UserRequest.model_validate(user)
+    except ValidationError as e:
+      raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=e.errors())
 
     operation = select(User).where(User.email == user.email)
     is_email_used = session.exec(operation).first()
@@ -66,7 +70,7 @@ async def register_user(user: User, engine: Annotated[Engine, Depends(get_engine
 
     pswd_hashed = pswd_hasher.hash(user.password)
     hashed_user = User(email=user.email, password=pswd_hashed)
-    
+
     try:
       session.add(hashed_user)
       session.commit()
