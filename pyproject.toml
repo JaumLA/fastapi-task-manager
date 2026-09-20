@@ -12,6 +12,7 @@ dependencies = [
     "httpx>=0.28.1",
     "psycopg2>=2.9.13",
     "pwdlib[argon2,bcrypt]>=0.3.1",
+    "pyjwt>=2.14.0",
     "pytest>=9.1.1",
     "python-dotenv>=1.2.3",
     "sqlmodel>=0.0.42",

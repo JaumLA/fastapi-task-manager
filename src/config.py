@@ -7,3 +7,5 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+
+TOKEN_SECRET_KEY = os.getenv("TOKEN_SECRET_KEY")

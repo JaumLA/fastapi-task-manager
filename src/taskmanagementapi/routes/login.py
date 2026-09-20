@@ -40,15 +40,10 @@ async def login(user: UserRequest, engine: Annotated[Engine, Depends(get_engine)
       return error_message
 
     # Valida hash da senha no banco
-    validation, updated_hash_pswd =  pswd_hasher.verify_and_update(password=user.password, hash=db_user.password)
+    validation =  pswd_hasher.verify(password=user.password, hash=db_user.password)
     if not validation:
       return error_message
 
-    # Se precisar atualiza o hash da senha
-    db_user.password = updated_hash_pswd if updated_hash_pswd else db_user.password
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
     return db_user
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
