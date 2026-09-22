@@ -2,7 +2,7 @@ from datetime import time
 
 from sqlmodel import Field, SQLModel, create_engine
 
-from ..config import DATABASE_URL
+from src.config import DATABASE_URL
 
 # Criação das tabelas e models do banco
 
@@ -38,7 +38,7 @@ if not DATABASE_URL:
 engine = create_engine(DATABASE_URL, echo=True)
 
 def get_engine():
-  yield engine
+  return engine
 
 def create_db_and_tables():
   SQLModel.metadata.create_all(engine)
