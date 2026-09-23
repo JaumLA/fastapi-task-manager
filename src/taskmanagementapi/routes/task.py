@@ -26,7 +26,8 @@ router = APIRouter(prefix="/task")
 def create_task(
   task: TaskResponse, 
   current_user: Annotated[TaskUser, Depends(get_current_user)],
-  session: Annotated[Session, Depends(get_session)]):
+  session: Annotated[Session, Depends(get_session)]
+):
   TaskResponse.model_validate(task)
   if not current_user:
     return {"Log again"}

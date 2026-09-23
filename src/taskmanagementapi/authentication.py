@@ -52,7 +52,7 @@ def create_access_token(id: int | None, data: TokenRequest, expires_delta: timed
   return encoded
 
 def check_exp_time(exp_time: datetime):
-  return datetime.now() > exp_time.now()
+  return exp_time > datetime.now(timezone.utc)
 
 def authenticate_user(user_email: EmailStr, pswd: str, session: Session):
   user = check_db_user(user_email, session)
@@ -84,7 +84,7 @@ async def get_current_user(
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
   return UserIdentifacation(id=validated_user.id, email=validated_user.email)
 
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def get_token(
   token_request: TokenRequest,
   session: Annotated[Session, Depends(get_session)],
@@ -95,4 +95,4 @@ async def get_token(
   if not current_user.id:
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
   token = create_access_token(id=current_user.id, data=token_request)
-  return {"Token": token}
+  return {"access_token": token, "token_type": "bearer"}
