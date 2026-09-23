@@ -18,13 +18,18 @@ class UserRequest(BaseModel):
   password: str = Field(min_length=8, max_length=32)
 
 @router.post("/")
-async def login(user: UserRequest):
+async def login(
+  user: UserRequest,
+  session: Annotated[Session, Depends(get_session)],
+):
   if not user.password or not user.email:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing information")
 
   UserRequest.model_validate(user)
 
-  response_user = authenticate_user(user_email=user.email, pswd=user.password)
+  response_user = authenticate_user(
+    user_email=user.email, pswd=user.password, session=session
+  )
   return response_user
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
