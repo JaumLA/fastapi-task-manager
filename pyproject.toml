@@ -27,3 +27,10 @@ build-backend = "uv_build"
 
 [tool.fastapi]
 entrypoint = "src.taskmanagementapi.main:app"
+
+[tool.pytest.ini_options]
+# Set the default mode for handling async tests
+asyncio_mode = "auto"
+
+# Required in newer versions of pytest-asyncio to avoid warnings/errors
+asyncio_default_fixture_loop_scope = "function"
