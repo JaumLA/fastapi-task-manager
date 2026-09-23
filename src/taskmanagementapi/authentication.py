@@ -13,7 +13,7 @@ from pwdlib.hashers.argon2 import Argon2Hasher
 from sqlmodel import Session, select
 
 from src.config import TOKEN_SECRET_KEY
-from taskmanagementapi.db import User, get_engine
+from src.taskmanagementapi.db import User, get_session, get_engine
 
 from pydantic import BaseModel, EmailStr
 
@@ -63,9 +63,9 @@ def authenticate_user(user_email: EmailStr, pswd: str):
   return user
 
 def check_db_user(user_email: EmailStr):
+  # Verifica se existe email
   engine = get_engine()
   with Session(engine) as session:
-    # Verifica se existe email
     find_user = select(User).where(User.email == user_email)
     db_user = session.exec(find_user).first()
     if not db_user:

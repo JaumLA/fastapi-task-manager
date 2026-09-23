@@ -1,6 +1,6 @@
 from datetime import time
 
-from sqlmodel import Field, SQLModel, create_engine
+from sqlmodel import Field, SQLModel, Session, create_engine
 
 from src.config import DATABASE_URL
 
@@ -38,7 +38,11 @@ if not DATABASE_URL:
 engine = create_engine(DATABASE_URL, echo=True)
 
 def get_engine():
-  return engine
+   return engine
+
+def get_session():
+    with Session(engine) as session:
+        yield session
 
 def create_db_and_tables():
   SQLModel.metadata.create_all(engine)

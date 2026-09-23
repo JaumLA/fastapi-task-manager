@@ -8,8 +8,8 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import insert
 from sqlmodel import Session, select
 
-from taskmanagementapi.db import Task, get_engine
-from taskmanagementapi.authentication import get_current_user
+from src.taskmanagementapi.db import Task, get_session
+from src.taskmanagementapi.authentication import get_current_user
 
 class TaskUser(BaseModel):
   id: int
@@ -23,19 +23,20 @@ class TaskResponse(BaseModel):
 router = APIRouter(prefix="/task")
 
 @router.post("/")
-def create_task(task: TaskResponse, current_user: Annotated[TaskUser, Depends(get_current_user)]):
+def create_task(
+  task: TaskResponse, 
+  current_user: Annotated[TaskUser, Depends(get_current_user)],
+  session: Annotated[Session, Depends(get_session)]):
   TaskResponse.model_validate(task)
   if not current_user:
     return {"Log again"}
 
-  engine = get_engine()
-  with Session(engine) as session:
-    create_query = insert(Task).values(
-      task_name=task.task_name,
-      init_time=task.init_time,
-      end_time=task.end_time,
-      user_id=current_user.id
-    )
+  create_query = insert(Task).values(
+    task_name=task.task_name,
+    init_time=task.init_time,
+    end_time=task.end_time,
+    user_id=current_user.id
+  )
   created_task = session.exec(create_query).last_inserted_params()
   
   session.commit()
@@ -43,13 +44,12 @@ def create_task(task: TaskResponse, current_user: Annotated[TaskUser, Depends(ge
 
 @router.get("/list")
 def get_tasks(
-  current_user: Annotated[TaskUser, Depends(get_current_user)]
+  current_user: Annotated[TaskUser, Depends(get_current_user)],
+  session: Annotated[Session, Depends(get_session)]
 ):
-  engine = get_engine()
   if not current_user:
     return {"Log again"}
-  with Session(engine) as session:
-    tasks_select = select(Task).where(Task.user_id == current_user.id)
-    lot = session.exec(tasks_select).all()
-    return lot
+  tasks_select = select(Task).where(Task.user_id == current_user.id)
+  lot = session.exec(tasks_select).all()
+  return lot
   

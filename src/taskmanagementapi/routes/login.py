@@ -4,11 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from pydantic import BaseModel, EmailStr, Field, ValidationError
 
-from sqlalchemy import Engine
 from sqlmodel import Session, select
 
-from taskmanagementapi.authentication import authenticate_user, pswd_hasher
-from taskmanagementapi.db import get_engine, User
+from src.taskmanagementapi.authentication import authenticate_user, pswd_hasher
+from src.taskmanagementapi.db import get_session, User
 
 router = APIRouter(
   prefix="/login"
@@ -29,30 +28,28 @@ async def login(user: UserRequest):
   return response_user
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register_user(user: UserRequest, engine: Annotated[Engine, Depends(get_engine)]):
-  with Session(engine) as session:
+async def register_user(user: UserRequest, session: Annotated[Session, Depends(get_session)]):
+  try:
+    UserRequest.model_validate(user)
+  except ValidationError as e:
+    raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=e.errors())
 
-    try:
-      UserRequest.model_validate(user)
-    except ValidationError as e:
-      raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=e.errors())
+  operation = select(User).where(User.email == user.email)
+  is_email_used = session.exec(operation).first()
+  if is_email_used:
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail="Email already used"
+    )
 
-    operation = select(User).where(User.email == user.email)
-    is_email_used = session.exec(operation).first()
-    if is_email_used:
-      raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Email already used"
-      )
+  pswd_hashed = pswd_hasher.hash(user.password)
+  hashed_user = User(email=user.email, password=pswd_hashed)
 
-    pswd_hashed = pswd_hasher.hash(user.password)
-    hashed_user = User(email=user.email, password=pswd_hashed)
-
-    try:
-      session.add(hashed_user)
-      session.commit()
-      session.refresh(hashed_user)
-      return {"message": "User created!", "user": hashed_user}
-    except:
-      session.rollback()
+  try:
+    session.add(hashed_user)
+    session.commit()
+    session.refresh(hashed_user)
+    return {"message": "User created!", "user": hashed_user}
+  except:
+    session.rollback()
 
