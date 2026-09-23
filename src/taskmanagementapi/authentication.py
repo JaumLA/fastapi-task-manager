@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime, timezone
 from typing import Annotated
 
-from fastapi import Depends, APIRouter
+from fastapi import Depends, APIRouter, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 import jwt
@@ -27,11 +27,11 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
   id: int | None
-  email: str
+  email: EmailStr
   exp: datetime
 
 class TokenRequest(BaseModel):
-  email:str
+  email: EmailStr
   password: str
 
 class UserIdentifacation(BaseModel):
@@ -52,27 +52,24 @@ def create_access_token(id: int | None, data: TokenRequest, expires_delta: timed
   return encoded
 
 def check_exp_time(exp_time: datetime):
-  if datetime.now() > exp_time.now():
-    return False
-  else:
-    return True
+  return datetime.now() > exp_time.now()
 
-def authenticate_user(user_email: str, pswd: str):
+def authenticate_user(user_email: EmailStr, pswd: str):
   user = check_db_user(user_email)
   # Valida hash da senha no banco
   validated =  pswd_hasher.verify(password=pswd, hash=user.password)
   if not validated:
-    return None
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
   return user
 
-def check_db_user(user_email: str):
+def check_db_user(user_email: EmailStr):
   engine = get_engine()
   with Session(engine) as session:
     # Verifica se existe email
     find_user = select(User).where(User.email == user_email)
     db_user = session.exec(find_user).first()
     if not db_user:
-      raise Exception()
+      raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     return db_user
 
 async def get_current_user(token_str: Annotated[str, Depends(oauth2_scheme)]):
@@ -80,18 +77,18 @@ async def get_current_user(token_str: Annotated[str, Depends(oauth2_scheme)]):
   token_data = TokenData(**decoded_payload)
   validated_token = check_exp_time(token_data.exp)
   if not validated_token:
-    raise Exception()
+    raise jwt.ExpiredSignatureError()
   validated_user = check_db_user(token_data.email)
   if not validated_user:
-    raise Exception()
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
   return UserIdentifacation(id=validated_user.id, email=validated_user.email)
 
 @router.post("/")
 async def get_token(token_request: TokenRequest):
   current_user = authenticate_user(token_request.email, token_request.password)
   if not current_user:
-    raise Exception()
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
   if not current_user.id:
-    Exception()
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
   token = create_access_token(id=current_user.id, data=token_request)
   return {"Token": token}
