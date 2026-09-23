@@ -7,4 +7,3 @@ def test_token_creation(client):
   user = client.post("/login/register", json=valid_user)
   response = client.post("/token", json=valid_user)
   response.status_code = status.HTTP_201_CREATED
-  print(response)
