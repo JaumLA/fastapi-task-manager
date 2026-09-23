@@ -51,36 +51,37 @@ def create_access_token(id: int | None, data: TokenRequest, expires_delta: timed
 
   return encoded
 
-def authenticate_token(token: Token):
-  decoded_token = jwt.decode(token.access_token, key=TOKEN_SECRET_KEY)
-  token_data = TokenData(**decoded_token)
-  if datetime.now() > token_data.exp.now():
-    return None
+def check_exp_time(exp_time: datetime):
+  if datetime.now() > exp_time.now():
+    return False
   else:
-    return token_data
+    return True
 
 def authenticate_user(user_email: str, pswd: str):
+  user = check_db_user(user_email)
+  # Valida hash da senha no banco
+  validated =  pswd_hasher.verify(password=pswd, hash=user.password)
+  if not validated:
+    return None
+  return user
+
+def check_db_user(user_email: str):
   engine = get_engine()
   with Session(engine) as session:
     # Verifica se existe email
     find_user = select(User).where(User.email == user_email)
     db_user = session.exec(find_user).first()
     if not db_user:
-      return None
-
-    # Valida hash da senha no banco
-    validated =  pswd_hasher.verify(password=pswd, hash=db_user.password)
-    if not validated:
-      return None
+      raise Exception()
     return db_user
 
 async def get_current_user(token_str: Annotated[str, Depends(oauth2_scheme)]):
-  decoded_payload = jwt.decode(token_str, key=TOKEN_SECRET_KEY)
-  token_data = Token(**decoded_payload)
-  validated_token = authenticate_token(token_data)
+  decoded_payload = jwt.decode(token_str, key=TOKEN_SECRET_KEY, algorithms=["HS256"])
+  token_data = TokenData(**decoded_payload)
+  validated_token = check_exp_time(token_data.exp)
   if not validated_token:
     raise Exception()
-  validated_user = authenticate_user(validated_token.email, validated_token.email)
+  validated_user = check_db_user(token_data.email)
   if not validated_user:
     raise Exception()
   return UserIdentifacation(id=validated_user.id, email=validated_user.email)

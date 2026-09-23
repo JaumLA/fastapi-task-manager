@@ -19,9 +19,7 @@ class UserRequest(BaseModel):
   password: str = Field(min_length=8, max_length=32)
 
 @router.post("/")
-async def login(user: UserRequest, engine: Annotated[Engine, Depends(get_engine)]):
-  error_message = {"message": "Wrong credentials."}
-
+async def login(user: UserRequest):
   if not user.password or not user.email:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing information")
 
