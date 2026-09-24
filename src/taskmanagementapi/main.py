@@ -11,4 +11,4 @@ app.include_router(task.router)
 
 @app.get("/")
 async def root():
-  return {"teste": "Hello World!!!"}
+  return {"teste": "Hello from docker!!!"}

@@ -11,6 +11,11 @@ services:
       DATABASE_URL_FILE: /run/secrets/app_db_url
       TEST_DATABASE_URL_FILE: /run/secrets/app_test_db_url
       TOKEN_SECRET_KEY_FILE: /run/secrets/app_token_encryption
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: ./code
     depends_on:
       - db
   db:
