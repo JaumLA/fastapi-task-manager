@@ -1,21 +1,28 @@
+from uuid import uuid4
+
 from fastapi import status
 
-from src.taskmanagementapi.authentication import get_current_user
 
-valid_user = dict(email="123@token.com", password="oi12312321d")
-valid_user_authentication = dict(email="123@token.puc", password="oooo213asd21")
+def test_create_token_success(client):
+    email = f'user-{uuid4().hex[:8]}@example.com'
+    password = 'Password123'
 
-def test_token_creation(client):
-  user = client.post("/login/register", json=valid_user)
-  response = client.post("/token", json=valid_user)
-  assert response.status_code == status.HTTP_201_CREATED
+    client.post('/login/register', json={'email': email, 'password': password})
+    response = client.post('/token', json={'email': email, 'password': password})
 
-async def test_token_authentication(client, session):
-  user = client.post("/login/register", json=valid_user_authentication)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert 'access_token' in response.json()
 
-  response = client.post("/token", json=valid_user_authentication)
-  assert response.status_code == status.HTTP_201_CREATED
-  print(response.json())
-  user = await get_current_user(token_str=response.json()["access_token"], session=session)
 
-  assert user is not None
+def test_token_authentication_returns_user(client):
+    email = f'user-{uuid4().hex[:8]}@example.com'
+    password = 'Password123'
+
+    client.post('/login/register', json={'email': email, 'password': password})
+    token_response = client.post('/token', json={'email': email, 'password': password})
+    token = token_response.json()['access_token']
+
+    auth_header = {'Authorization': f'Bearer {token}'}
+    protected_response = client.get('/task/list', headers=auth_header)
+
+    assert protected_response.status_code == status.HTTP_200_OK
