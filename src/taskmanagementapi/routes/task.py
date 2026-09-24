@@ -1,12 +1,11 @@
 from datetime import time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
 
-from sqlalchemy import insert
-from sqlmodel import Session, select
+from sqlmodel import Session, select, insert
 
 from src.taskmanagementapi.db import Task, get_session
 from src.taskmanagementapi.authentication import get_current_user
@@ -38,7 +37,7 @@ def create_task(
     end_time=task.end_time,
     user_id=current_user.id
   )
-  created_task = session.exec(create_query).last_inserted_params()
+  created_task = session.exec(create_query).first()
   
   session.commit()
   return created_task
@@ -53,4 +52,25 @@ def get_tasks(
   tasks_select = select(Task).where(Task.user_id == current_user.id)
   lot = session.exec(tasks_select).all()
   return lot
-  
+
+@router.delete("/{task_id}")
+def delete_task(
+  task_id: int, 
+  current_user: Annotated[TaskUser, Depends(get_current_user)],
+  session: Annotated[Session, Depends(get_session)]
+):
+  if not current_user:
+    return {"Log again"}
+
+  tsk_select = select(Task).where(Task.id == task_id, Task.user_id == current_user.id)
+  tsk = session.exec(tsk_select).first()
+  if not tsk:
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+  try:
+    session.delete(tsk)
+    session.commit()
+    return {"Status": "Task Deleted"}
+  except:
+    session.rollback()
+    return {"error": "something went wrong"}
