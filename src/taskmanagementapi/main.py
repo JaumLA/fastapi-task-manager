@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from src.taskmanagementapi import authentication
+from taskmanagementapi import authentication
 
-from src.taskmanagementapi.routes import login, task
+from taskmanagementapi.routes import login, task
 
 app = FastAPI()
 

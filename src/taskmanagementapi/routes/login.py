@@ -6,8 +6,8 @@ from pydantic import BaseModel, EmailStr, Field, ValidationError
 
 from sqlmodel import Session, select
 
-from src.taskmanagementapi.authentication import authenticate_user, pswd_hasher
-from src.taskmanagementapi.db import get_session, User
+from taskmanagementapi.authentication import authenticate_user, pswd_hasher
+from taskmanagementapi.db import get_session, User
 
 router = APIRouter(
   prefix="/login"

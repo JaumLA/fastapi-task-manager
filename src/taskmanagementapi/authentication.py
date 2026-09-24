@@ -12,8 +12,8 @@ from pwdlib.hashers.argon2 import Argon2Hasher
 
 from sqlmodel import Session, select
 
-from src.config import TOKEN_SECRET_KEY
-from src.taskmanagementapi.db import User, get_session
+from taskmanagementapi.config import TOKEN_SECRET_KEY
+from taskmanagementapi.db import User, get_session
 
 from pydantic import BaseModel, EmailStr
 

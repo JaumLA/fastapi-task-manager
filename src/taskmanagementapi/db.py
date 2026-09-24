@@ -2,7 +2,7 @@ from datetime import time
 
 from sqlmodel import Field, SQLModel, Session, create_engine
 
-from src.config import DATABASE_URL
+from taskmanagementapi.config import DATABASE_URL
 
 # Criação das tabelas e models do banco
 

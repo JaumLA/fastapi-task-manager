@@ -7,8 +7,8 @@ from pydantic import BaseModel, EmailStr
 
 from sqlmodel import Session, select, insert
 
-from src.taskmanagementapi.db import Task, get_session
-from src.taskmanagementapi.authentication import get_current_user
+from taskmanagementapi.db import Task, get_session
+from taskmanagementapi.authentication import get_current_user
 
 class TaskUser(BaseModel):
   id: int

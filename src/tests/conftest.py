@@ -2,9 +2,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session
 
-from src.taskmanagementapi.db import get_session
-from src.taskmanagementapi.main import app
-from src.config import TEST_DATABASE_URL
+from taskmanagementapi.db import get_session
+from taskmanagementapi.main import app
+from taskmanagementapi.config import TEST_DATABASE_URL
 
 from sqlalchemy import create_engine
 
